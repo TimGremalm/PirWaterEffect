@@ -16,7 +16,9 @@ WaterState lastState = Idle;
 WaterState currentState = Idle;
 unsigned long onStateTime = 0;
 unsigned long idleStateTime = 0;
-float brightness = 0;
+float outHue = 0.5;
+float outSaturation = 1.0;
+float outBrightness = 0;
 
 String waterStateToString(WaterState in) {
 	switch (in) {
@@ -33,6 +35,36 @@ String waterStateToString(WaterState in) {
 			return("FadeOut");
 			break;
 	}
+}
+
+float hueToRgb(float p, float q, float t) {
+	if (t < (float)0)
+			t += (float)1;
+	if (t > (float)1)
+			t -= (float)1;
+	if (t < (float)1/(float)6)
+			return p + (q - p) * (float)6 * t;
+	if (t < (float)1/(float)2)
+			return q;
+	if (t < (float)2/(float)3)
+			return p + (q - p) * ((float)2.0/ (float)3.0 - t) * (float)6;
+	return p;
+}
+void hslToRgb(float hue, float saturation, float lightness, int rgb[]) {
+	float r, g, b;
+
+	if (saturation == (float)0) {
+			r = g = b = lightness; // achromatic
+	} else {
+			float q = lightness < 0.5 ? lightness * (1 + saturation) : lightness + saturation - lightness * saturation;
+			float p = 2 * lightness - q;
+			r = hueToRgb(p, q, hue + (float)1/(float)3);
+			g = hueToRgb(p, q, hue);
+			b = hueToRgb(p, q, hue - (float)1/(float)3);
+	}
+	rgb[0] = (int) (r * 255);
+	rgb[1] = (int) (g * 255);
+	rgb[2] = (int) (b * 255);
 }
 
 void checkStates() {
@@ -55,7 +87,7 @@ void checkStates() {
 			}
 			break;
 		case FadeIn:
-			if (brightness >= 0.3) {
+			if (outBrightness >= 0.2) {
 				currentState = On;
 				onStateTime = millis();
 			}
@@ -68,7 +100,7 @@ void checkStates() {
 			}
 			break;
 		case FadeOut:
-			if (brightness <= 0) {
+			if (outBrightness <= 0) {
 				currentState = Idle;
 				idleStateTime = millis();
 			}
@@ -85,18 +117,29 @@ void actStages() {
 		case Idle:
 			break;
 		case FadeIn:
-			brightness += 0.01;
-			Serial.println(brightness);
+			outBrightness += 0.01;
 			break;
 		case On:
 			break;
 		case FadeOut:
-			brightness -= 0.01;
-			if (brightness < 0 ) {
-				brightness = 0;
+			outBrightness -= 0.01;
+			if (outBrightness < 0 ) {
+				outBrightness = 0;
 			}
-      Serial.println(brightness);
 			break;
+	}
+	
+	if (lastState == FadeIn || lastState == FadeOut) {
+		int nRGB[3] = {0,0,0};
+		hslToRgb(outHue, outSaturation, outBrightness, nRGB);
+		Serial.print(nRGB[0]);
+		Serial.print(" ");
+		Serial.print(nRGB[1]);
+		Serial.print(" ");
+		Serial.print(nRGB[2]);
+		Serial.print(" \n");
+		Serial.println(outBrightness);
+		//analogWrite(pinW, outBrightness);
 	}
 }
 
@@ -108,7 +151,5 @@ void setup() {
 void loop() {
 	checkStates();
 	actStages();
-	//analogWrite(pinW, brightness);
-
 	delay(50);
 }
