@@ -4,7 +4,8 @@ const int pinG = 6;
 const int pinB = 9;
 const int pinPir = 12;
 
-int valueSensorPir = 0;
+int lastPir = 0;
+int currentPir = 0;
 enum WaterState {
 	Idle,
 	FadeIn,
@@ -13,6 +14,8 @@ enum WaterState {
 };
 WaterState lastState = Idle;
 WaterState currentState = Idle;
+unsigned long onStateTime = 0;
+unsigned long idleStateTime = 0;
 int brightness = 0;
 
 String waterStateToString(WaterState in) {
@@ -33,26 +36,41 @@ String waterStateToString(WaterState in) {
 }
 
 void checkStates() {
-	valueSensorPir = digitalRead(pinPir);
+	currentPir = digitalRead(pinPir);
+	if (lastPir != currentPir) {
+		if (currentPir == HIGH) {
+			Serial.println("Pir On");
+		} else {
+			Serial.println("Pir Off");
+		}
+	}
+	lastPir = currentPir;
+
 	switch (lastState) {
 		case Idle:
-			if (valueSensorPir == HIGH) {
+			unsigned long deltaIdleTime;
+			deltaIdleTime = millis()-idleStateTime;
+			if (deltaIdleTime > 5000 && currentPir == HIGH) {
 				currentState = FadeIn;
 			}
 			break;
 		case FadeIn:
-			if (brightness > 10) {
+			if (brightness >= 10) {
 				currentState = On;
+				onStateTime = millis();
 			}
 			break;
 		case On:
-			if (valueSensorPir == LOW) {
+			unsigned long deltaOnTime;
+			deltaOnTime = millis()-onStateTime;
+			if (deltaOnTime > 5000 && currentPir == LOW) {
 				currentState = FadeOut;
 			}
 			break;
 		case FadeOut:
 			if (brightness <= 0) {
 				currentState = Idle;
+				idleStateTime = millis();
 			}
 			break;
 	}
@@ -68,7 +86,7 @@ void actStages() {
 			break;
 		case FadeIn:
 			brightness += 1;
-      Serial.println(brightness);
+			Serial.println(brightness);
 			break;
 		case On:
 			break;
