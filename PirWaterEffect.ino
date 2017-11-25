@@ -1,7 +1,7 @@
 const int pinW = 3;
-const int pinR = 5;
+const int pinR = 9;
 const int pinG = 6;
-const int pinB = 9;
+const int pinB = 5;
 const int pinPir = 12;
 
 int lastPir = 0;
@@ -16,7 +16,7 @@ WaterState lastState = Idle;
 WaterState currentState = Idle;
 unsigned long onStateTime = 0;
 unsigned long idleStateTime = 0;
-float outHue = 0.5;
+float outHue = 0.45;
 float outSaturation = 1.0;
 float outBrightness = 0;
 
@@ -82,12 +82,12 @@ void checkStates() {
 		case Idle:
 			unsigned long deltaIdleTime;
 			deltaIdleTime = millis()-idleStateTime;
-			if (deltaIdleTime > 4000 && currentPir == HIGH) {
+			if (deltaIdleTime > 2000 && currentPir == HIGH) {
 				currentState = FadeIn;
 			}
 			break;
 		case FadeIn:
-			if (outBrightness >= 0.2) {
+			if (outBrightness >= 0.3) {
 				currentState = On;
 				onStateTime = millis();
 			}
@@ -95,12 +95,12 @@ void checkStates() {
 		case On:
 			unsigned long deltaOnTime;
 			deltaOnTime = millis()-onStateTime;
-			if (deltaOnTime > 4000 && currentPir == LOW) {
+			if (deltaOnTime > 2000 && currentPir == LOW) {
 				currentState = FadeOut;
 			}
 			break;
 		case FadeOut:
-			if (outBrightness <= 0) {
+			if (outBrightness <= 0.03) {
 				currentState = Idle;
 				idleStateTime = millis();
 			}
@@ -117,15 +117,15 @@ void actStages() {
 		case Idle:
 			break;
 		case FadeIn:
-			outBrightness += 0.01;
+			outBrightness += 0.005;
 			break;
 		case On:
 			break;
 		case FadeOut:
 			outBrightness -= 0.01;
-			if (outBrightness < 0 ) {
-				outBrightness = 0;
-			}
+			//if (outBrightness < 0 ) {
+			//	outBrightness = 0;
+			//}
 			break;
 	}
 	
@@ -138,8 +138,10 @@ void actStages() {
 		Serial.print(" ");
 		Serial.print(nRGB[2]);
 		Serial.print(" \n");
-		Serial.println(outBrightness);
-		//analogWrite(pinW, outBrightness);
+		//Serial.println(outBrightness);
+		analogWrite(pinR, nRGB[0]);
+		analogWrite(pinG, nRGB[1]);
+		analogWrite(pinB, nRGB[2]);
 	}
 }
 
