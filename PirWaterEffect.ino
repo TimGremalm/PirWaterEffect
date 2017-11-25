@@ -16,7 +16,7 @@ WaterState lastState = Idle;
 WaterState currentState = Idle;
 unsigned long onStateTime = 0;
 unsigned long idleStateTime = 0;
-int brightness = 0;
+float brightness = 0;
 
 String waterStateToString(WaterState in) {
 	switch (in) {
@@ -50,12 +50,12 @@ void checkStates() {
 		case Idle:
 			unsigned long deltaIdleTime;
 			deltaIdleTime = millis()-idleStateTime;
-			if (deltaIdleTime > 5000 && currentPir == HIGH) {
+			if (deltaIdleTime > 4000 && currentPir == HIGH) {
 				currentState = FadeIn;
 			}
 			break;
 		case FadeIn:
-			if (brightness >= 10) {
+			if (brightness >= 0.3) {
 				currentState = On;
 				onStateTime = millis();
 			}
@@ -63,7 +63,7 @@ void checkStates() {
 		case On:
 			unsigned long deltaOnTime;
 			deltaOnTime = millis()-onStateTime;
-			if (deltaOnTime > 5000 && currentPir == LOW) {
+			if (deltaOnTime > 4000 && currentPir == LOW) {
 				currentState = FadeOut;
 			}
 			break;
@@ -85,13 +85,16 @@ void actStages() {
 		case Idle:
 			break;
 		case FadeIn:
-			brightness += 1;
+			brightness += 0.01;
 			Serial.println(brightness);
 			break;
 		case On:
 			break;
 		case FadeOut:
-			brightness -= 1;
+			brightness -= 0.01;
+			if (brightness < 0 ) {
+				brightness = 0;
+			}
       Serial.println(brightness);
 			break;
 	}
@@ -107,5 +110,5 @@ void loop() {
 	actStages();
 	//analogWrite(pinW, brightness);
 
-	delay(100);
+	delay(50);
 }
