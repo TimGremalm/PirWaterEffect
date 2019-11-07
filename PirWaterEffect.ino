@@ -87,7 +87,7 @@ void checkStates() {
 			}
 			break;
 		case FadeIn:
-			if (outBrightness >= 0.3) {
+			if (outBrightness >= 0.5) {
 				currentState = On;
 				onStateTime = millis();
 			}
@@ -100,7 +100,7 @@ void checkStates() {
 			}
 			break;
 		case FadeOut:
-			if (outBrightness <= 0.03) {
+			if (outBrightness <= 0.45) {
 				currentState = Idle;
 				idleStateTime = millis();
 			}
